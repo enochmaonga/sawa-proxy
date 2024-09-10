@@ -72,5 +72,29 @@ const handleMoveToRepair = async (req, res) => {
     }
   }
 };
+const handleGetDispatch = async (req, res) => {
+  let client;
 
-module.exports = { handleMoveToRepair };
+  try {
+    const { client: initializedClient, repairsCollection } = await initDB();
+    client = initializedClient;
+
+    // Fetch all repairs from the repairsCollection
+    const repairs = await repairsCollection.find({}).toArray();
+
+    if (!repairs.length) {
+      return res.status(404).json({ message: "No repairs found" });
+    }
+
+    res.status(200).json(repairs);
+  } catch (err) {
+    console.error("Error:", err.message);
+    res.status(500).json({ message: err.message });
+  } finally {
+    if (client) {
+      await client.close();
+    }
+  }
+};
+
+module.exports = { handleMoveToRepair, handleGetDispatch };
