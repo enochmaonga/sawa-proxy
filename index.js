@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const app = express();
 const cors = require('cors');
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use('/users', require('./routes/users'))
 app.use('/booking', require('./routes/booking'))
 app.use('/dispatch', require('./routes/dispatch'))
+app.use('/login', require('./routes/login'))
 
 // Basic route
 app.get('/', (req, res) => {

@@ -73,11 +73,13 @@ const handleMoveToRepair = async (req, res) => {
   }
 };
 const handleGetDispatch = async (req, res) => {
+  const { userId } = req.params;
   let client;
 
   try {
     const { client: initializedClient, repairsCollection } = await initDB();
     client = initializedClient;
+    
 
     // Fetch all repairs from the repairsCollection
     const repairs = await repairsCollection.find({}).toArray();

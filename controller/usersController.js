@@ -22,25 +22,26 @@ const handleNewUser = async (req, res) => {
     email,
     password,
     userType,
+    repairCenter, // Add repairCenter to the body request
   } = req.body;
 
-  if (
-    !name ||
-    !password ||
-    !email ||
-    !userType
-  ) {
+  // Ensure required fields are present
+  if (!name || !password || !email || !userType) {
     return res.status(400).json({ message: "All fields are required" });
   }
-  console.log("entry", req.body);
-  console.log('Confirm Data:', req.body);
-  let client; // Declare client outside of the try block
+
+  // If the user is a technician, ensure that repairCenter is provided
+  if (userType === "Technician" && !repairCenter) {
+    return res.status(400).json({ message: "Repair center is required for technicians" });
+  }
+
+  let client;
 
   try {
     const { client: initializedClient, sawacom } = await initDB();
-    client = initializedClient; // Assign the initialized client to the outer client variable
+    client = initializedClient;
 
-    // Check for duplicates in the database
+    // Check for existing users with the same email
     const duplicate = await sawacom.users.findOne({ email: email });
     if (duplicate) {
       return res.status(409).json({ message: "Email already exists" });
@@ -49,32 +50,28 @@ const handleNewUser = async (req, res) => {
     // Encrypt the password
     const hashedPwd = await bcryptjs.hash(password, 10);
 
-    // Store the new user with the hashed password
+    // Create the new user object
     const newUser = {
-      name: name,
-      email: email,
+      name,
+      email,
       password: hashedPwd,
-      userType: userType,
+      userType,
     };
 
-    // Insert the new user into the database
+    // If the user is a Technician, add repairCenter to their record
+    if (userType === "Technician") {
+      newUser.repairCenter = repairCenter;
+    }
+
+    // Insert the new user into the collection
     await sawacom.users.insertOne(newUser);
 
-    // Return an array with the new user object
-    const newUserArray = [
-      {
-        name,
-        email,
-        password,
-        userType,
-      },
-    ];
-    res.status(201).json(newUserArray);
+    // Respond with the new user data
+    res.status(201).json(newUser);
   } catch (err) {
-    console.error("Error:", err.message);  // Corrected the typo here
+    console.error("Error:", err.message);
     res.status(500).json({ message: err.message });
   } finally {
-    // Close the MongoDB connection if it was established
     if (client) {
       await client.close();
     }
